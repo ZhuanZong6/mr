@@ -5,15 +5,6 @@ import org.apache.spark.mllib.recommendation.{ALS, Rating}
 import org.apache.spark.sql.SparkSession
 import org.jblas.DoubleMatrix
 
-/**
-  * Copyright (c) 2018-2028 尚硅谷 All Rights Reserved 
-  *
-  * Project: MovieRecommendSystem
-  * Package: com.atguigu.offline
-  * Version: 1.0
-  *
-  * Created by wushengran on 2019/4/2 14:17
-  */
 
 // 基于评分数据的LFM，只需要rating数据
 case class MovieRating(uid: Int, mid: Int, score: Double, timestamp: Int )
@@ -46,7 +37,7 @@ object OfflineRecommender {
       "mongo.db" -> "recommender"
     )
 
-    val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("OfflineRecommender")
+    val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("OfflineRecommender").set("spark.executor.memory", "6G").set("spark.driver.memory", "3G")
 
     // 创建一个SparkSession
     val spark = SparkSession.builder().config(sparkConf).getOrCreate()
@@ -55,7 +46,7 @@ object OfflineRecommender {
 
     implicit val mongoConfig = MongoConfig(config("mongo.uri"), config("mongo.db"))
 
-
+//==============================计算用户推荐矩阵====================================
     // 加载数据
     val ratingRDD = spark.read
       .option("uri", mongoConfig.uri)
@@ -75,6 +66,12 @@ object OfflineRecommender {
     val trainData = ratingRDD.map( x => Rating(x._1, x._2, x._3) )
 
     val (rank, iterations, lambda) = (200, 5, 0.1)
+    /*
+    * trainData：哪个用户给哪部电影评几分（uid，mid，score）
+    * rank：特征维数
+    * iteration:迭代次数
+    * lamda：步长参数
+    * */
     val model = ALS.train(trainData, rank, iterations, lambda)
 
     // 基于用户和电影的隐特征，计算预测评分，得到用户的推荐列表
@@ -86,9 +83,10 @@ object OfflineRecommender {
 
     val userRecs = preRatings
       .filter(_.rating > 0)    // 过滤出评分大于0的项
+                     //   uid            mid               评分
       .map(rating => ( rating.user, (rating.product, rating.rating) ) )
       .groupByKey()
-      .map{
+      .map{//                                                     降序                    要多少行数据
         case (uid, recs) => UserRecs( uid, recs.toList.sortWith(_._2>_._2).take(USER_MAX_RECOMMENDATION).map(x=>Recommendation(x._1, x._2)) )
       }
       .toDF()
@@ -100,12 +98,15 @@ object OfflineRecommender {
       .format("com.mongodb.spark.sql")
       .save()
 
+
+//==============================计算相似度矩阵========================================
+
     // 基于电影隐特征，计算相似度矩阵，得到电影的相似度列表
-    val movieFeatures = model.productFeatures.map{
+    val movieFeatures = model.productFeatures.map{ //特征值是模型自动给出的，无法知道其意义
       case (mid, features) => (mid, new DoubleMatrix(features))
     }
 
-    // 对所有电影两两计算它们的相似度，先做笛卡尔积
+    // 对所有电影两两计算它们的相似度，先做笛卡尔积（cartesian）
     val movieRecs = movieFeatures.cartesian(movieFeatures)
       .filter{
         // 把自己跟自己的配对过滤掉
@@ -113,11 +114,12 @@ object OfflineRecommender {
       }
       .map{
         case (a, b) => {
+          //simScore：相似度分值  consinSim：计算相似度的函数
           val simScore = this.consinSim(a._2, b._2)
           ( a._1, ( b._1, simScore ) )
         }
       }
-      .filter(_._2._2 > 0.6)    // 过滤出相似度大于0.6的
+      .filter(_._2._2 > 0.6)    // 过滤出相似度大于0.6的才有意义
       .groupByKey()
       .map{
         case (mid, items) => MovieRecs( mid, items.toList.sortWith(_._2 > _._2).map(x => Recommendation(x._1, x._2)) )

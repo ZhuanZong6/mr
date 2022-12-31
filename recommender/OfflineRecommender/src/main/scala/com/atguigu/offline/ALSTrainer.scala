@@ -7,21 +7,12 @@ import org.apache.spark.mllib.recommendation.{ALS, MatrixFactorizationModel, Rat
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
-/**
-  * Copyright (c) 2018-2028 尚硅谷 All Rights Reserved 
-  *
-  * Project: MovieRecommendSystem
-  * Package: com.atguigu.offline
-  * Version: 1.0
-  *
-  * Created by wushengran on 2019/4/3 8:51
-  */
 
 object ALSTrainer {
   def main(args: Array[String]): Unit = {
     val config = Map(
       "spark.cores" -> "local[*]",
-      "mongo.uri" -> "mongodb://localhost:27017/recommender",
+      "mongo.uri" -> "mongodb://144.202.115.134:27017/recommender",
       "mongo.db" -> "recommender"
     )
 
@@ -65,7 +56,7 @@ object ALSTrainer {
         ( rank, lambda, rmse )
       }
     // 控制台打印输出最优参数
-    println(result.minBy(_._3))
+    println("==================================" + result.minBy(_._3))
   }
 
   def getRMSE(model: MatrixFactorizationModel, data: RDD[Rating]): Double = {

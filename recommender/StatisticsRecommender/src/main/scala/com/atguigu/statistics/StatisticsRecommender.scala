@@ -6,15 +6,7 @@ import java.util.Date
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-/**
-  * Copyright (c) 2018-2028 尚硅谷 All Rights Reserved 
-  *
-  * Project: MovieRecommendSystem
-  * Package: com.atguigu.statistics
-  * Version: 1.0
-  *
-  * Created by wushengran on 2019/4/2 10:00
-  */
+
 
 case class Movie(mid: Int, name: String, descri: String, timelong: String, issue: String,
                  shoot: String, language: String, genres: String, actors: String, directors: String)
@@ -44,7 +36,7 @@ object StatisticsRecommender {
   def main(args: Array[String]): Unit = {
     val config = Map(
       "spark.cores" -> "local[*]",
-      "mongo.uri" -> "mongodb://localhost:27017/recommender",
+      "mongo.uri" -> "mongodb://144.202.115.134:27017/recommender",
       "mongo.db" -> "recommender"
     )
 
@@ -87,7 +79,7 @@ object StatisticsRecommender {
     // 2. 近期热门统计，按照“yyyyMM”格式选取最近的评分数据，统计评分个数
     // 创建一个日期格式化工具
     val simpleDateFormat = new SimpleDateFormat("yyyyMM")
-    // 注册udf，把时间戳转换成年月格式
+    // 注册udf，把时间戳转换成年月格式    126075914  =》201706
     spark.udf.register("changeDate", (x: Int)=>simpleDateFormat.format(new Date(x * 1000L)).toInt )
 
     // 对原始数据做预处理，去掉uid
@@ -121,11 +113,11 @@ object StatisticsRecommender {
         // 条件过滤，找出movie的字段genres值(Action|Adventure|Sci-Fi)包含当前类别genre(Action)的那些
         case (genre, movieRow) => movieRow.getAs[String]("genres").toLowerCase.contains( genre.toLowerCase )
       }
-      .map{
+      .map{//生成RDD[类别， iter[mid, 评分]]
         case (genre, movieRow) => ( genre, ( movieRow.getAs[Int]("mid"), movieRow.getAs[Double]("avg") ) )
       }
-      .groupByKey()
-      .map{
+      .groupByKey()//将相同类别的电影聚集
+      .map{//通过评分的大小进行数据排序，然后映射成对象
         case (genre, items) => GenresRecommendation( genre, items.toList.sortWith(_._2>_._2).take(10).map( item=> Recommendation(item._1, item._2)) )
       }
       .toDF()
