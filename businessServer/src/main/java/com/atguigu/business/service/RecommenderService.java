@@ -26,15 +26,15 @@ public class RecommenderService {
 
     // 混合推荐中CF的比例
     private static Double CF_RATING_FACTOR = 0.3;
-    private static Double CB_RATING_FACTOR = 0.3;
-    private static Double SR_RATING_FACTOR = 0.4;
+    private static Double CONTENT_REC_RATING_FACTOR = 0.3;
+    private static Double STREAM_REC_RATING_FACTOR = 0.4;
 
     @Autowired
     private MongoClient mongoClient;
     @Autowired
     private TransportClient esClient;
 
-    // 协同过滤推荐【电影相似性】
+    // 协同过滤推荐（电影相似度矩阵）
     private List<Recommendation> findMovieCFRecs(int mid, int maxItems) {
         MongoCollection<Document> movieRecsCollection = mongoClient.getDatabase(Constant.MONGODB_DATABASE).getCollection(Constant.MONGODB_MOVIE_RECS_COLLECTION);
         Document movieRecs = movieRecsCollection.find(new Document("mid", mid)).first();
@@ -50,7 +50,7 @@ public class RecommenderService {
 
 
 
-    // 基于内容的推荐算法
+    // 基于内容的推荐算法定义 109行用到
     private List<Recommendation> findContentBasedMoreLikeThisRecommendations(int mid, int maxItems) {
         MoreLikeThisQueryBuilder query = QueryBuilders.moreLikeThisQuery(/*new String[]{"name", "descri", "genres", "actors", "directors", "tags"},*/
                 new MoreLikeThisQueryBuilder.Item[]{new MoreLikeThisQueryBuilder.Item(Constant.ES_INDEX, Constant.ES_MOVIE_TYPE, String.valueOf(mid))});
@@ -96,23 +96,25 @@ public class RecommenderService {
         return recommendations;
     }
 
-    // 混合推荐算法
-    private List<Recommendation> findHybridRecommendations(int productId, int maxItems) {
+    // 混合推荐算法iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+    private List<Recommendation>  findHybridRecommendations(int productId, int maxItems) {
         List<Recommendation> hybridRecommendations = new ArrayList<>();
-
+        //协同过滤结果（电影相似度矩阵）
         List<Recommendation> cfRecs = findMovieCFRecs(productId, maxItems);
         for (Recommendation recommendation : cfRecs) {
             hybridRecommendations.add(new Recommendation(recommendation.getMid(), recommendation.getScore() * CF_RATING_FACTOR));
         }
 
+        //基于es内容推荐结果
         List<Recommendation> cbRecs = findContentBasedMoreLikeThisRecommendations(productId, maxItems);
         for (Recommendation recommendation : cbRecs) {
-            hybridRecommendations.add(new Recommendation(recommendation.getMid(), recommendation.getScore() * CB_RATING_FACTOR));
+            hybridRecommendations.add(new Recommendation(recommendation.getMid(), recommendation.getScore() * CONTENT_REC_RATING_FACTOR));
         }
 
+        //实时推荐结果
         List<Recommendation> streamRecs = findStreamRecs(productId,maxItems);
         for (Recommendation recommendation : streamRecs) {
-            hybridRecommendations.add(new Recommendation(recommendation.getMid(), recommendation.getScore() * SR_RATING_FACTOR));
+            hybridRecommendations.add(new Recommendation(recommendation.getMid(), recommendation.getScore() * STREAM_REC_RATING_FACTOR));
         }
 
         Collections.sort(hybridRecommendations, new Comparator<Recommendation>() {
@@ -124,19 +126,21 @@ public class RecommenderService {
         return hybridRecommendations.subList(0, maxItems > hybridRecommendations.size() ? hybridRecommendations.size() : maxItems);
     }
 
-
+//------------------用到离线推荐数据------------------
     public List<Recommendation> getCollaborativeFilteringRecommendations(MovieRecommendationRequest request) {
         return findMovieCFRecs(request.getMid(), request.getSum());
     }
 
-    public List<Recommendation> getCollaborativeFilteringRecommendations(UserRecommendationRequest request) {
+    public List<Recommendation>  getCollaborativeFilteringRecommendations(UserRecommendationRequest request) {
 
         return findUserCFRecs(request.getUid(), request.getSum());
     }
+//------------------end用到离线推荐数据------------------
 
-    public List<Recommendation> getContentBasedMoreLikeThisRecommendations(MovieRecommendationRequest request) {
-        return findContentBasedMoreLikeThisRecommendations(request.getMid(), request.getSum());
-    }
+
+//    public List<Recommendation> getContentBasedMoreLikeThisRecommendations(MovieRecommendationRequest request) {
+//        return findContentBasedMoreLikeThisRecommendations(request.getMid(), request.getSum());
+//    }
 
     public List<Recommendation> getContentBasedSearchRecommendations(SearchRecommendationRequest request) {
         return findContentBasedSearchRecommendations(request.getText(), request.getSum());

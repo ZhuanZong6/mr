@@ -37,8 +37,8 @@ public class MovieRestApi {
     @Autowired
     private TagService tagService;
 
-    /**
-     * 获取推荐的电影【实时推荐6 + 内容推荐4】
+    /**f
+     * 获取推荐的电影【电影相似度矩阵 + es内容推荐 + 实时推荐】
      * @param username
      * @param model
      * @return
@@ -47,19 +47,22 @@ public class MovieRestApi {
     @RequestMapping(value = "/guess", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
     public Model getGuessMovies(@RequestParam("username")String username,@RequestParam("num")int num, Model model) {
-        User user = userService.findByUsername(username);
+        User user = userService.findByUsername(username);                                                                      //第一个参数应该传进mid(只用改这里)
         List<Recommendation> recommendations = recommenderService.getHybridRecommendations(new MovieHybridRecommendationRequest(user.getUid(),num));
         if(recommendations.size()==0){
             String randomGenres = user.getPrefGenres().get(new Random().nextInt(user.getPrefGenres().size()));
             recommendations = recommenderService.getTopGenresRecommendations(new TopGenresRecommendationRequest(randomGenres.split(" ")[0],num));
+
         }
         model.addAttribute("success",true);
         model.addAttribute("movies",movieService.getHybirdRecommendeMovies(recommendations));
         return model;
     }
 
-    /**
-     *
+    //--------------------用到离线推荐数据-------------------
+    /**b:   user.getUid()是uid的hashcode，对应的数值在userRecs中不存在
+     *  离线推荐，基于用户的协同过滤
+     *  读取userRecs表
      * @param username
      * @param model
      * @return
@@ -68,6 +71,7 @@ public class MovieRestApi {
     @ResponseBody
     public Model getWishMovies(@RequestParam("username")String username,@RequestParam("num")int num, Model model) {
         User user = userService.findByUsername(username);
+        //基于用户的协同过滤，读取userRecs表
         List<Recommendation> recommendations = recommenderService.getCollaborativeFilteringRecommendations(new UserRecommendationRequest(user.getUid(),num));
         if(recommendations.size()==0){
             String randomGenres = user.getPrefGenres().get(new Random().nextInt(user.getPrefGenres().size()));
@@ -78,7 +82,26 @@ public class MovieRestApi {
         return model;
     }
 
-    /**
+    /**f
+     * 获取电影详细页面相似的电影集合
+     * 读取movieRecs表
+     * @param id
+     * @param model
+     * @return
+     */
+    @RequestMapping(value = "/same/{mid}", produces = "application/json", method = RequestMethod.GET )
+    @ResponseBody
+    public Model getSameMovie(@PathVariable("mid")int id,@RequestParam("num")int num, Model model) {
+        //基于电影内容的协同过滤，读取movieRecs表
+        List<Recommendation> recommendations = recommenderService.getCollaborativeFilteringRecommendations(new MovieRecommendationRequest(id,num));
+        model.addAttribute("success",true);
+        model.addAttribute("movies",movieService.getRecommendeMovies(recommendations));
+        return model;
+    }
+    //--------------------end用到离线推荐数据-------------------
+
+
+    /**f
      * 获取热门推荐
      * @param model
      * @return
@@ -86,28 +109,30 @@ public class MovieRestApi {
     @RequestMapping(value = "/hot", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
     public Model getHotMovies(@RequestParam("num")int num, Model model) {
+        //读取最近一个月被评分最多的表
         List<Recommendation> recommendations = recommenderService.getHotRecommendations(new HotRecommendationRequest(num));
         model.addAttribute("success",true);
         model.addAttribute("movies",movieService.getRecommendeMovies(recommendations));
         return model;
     }
 
-    /**
-     * 获取投票最多的电影
+    /**f
+     * 获取投票最多的电影 num：数量
      * @param model
      * @return
      */
     @RequestMapping(value = "/rate", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
     public Model getRateMoreMovies(@RequestParam("num")int num, Model model) {
+        //读取历史被评分最多的表
         List<Recommendation> recommendations = recommenderService.getRateMoreRecommendations(new RateMoreRecommendationRequest(num));
         model.addAttribute("success",true);
         model.addAttribute("movies",movieService.getRecommendeMovies(recommendations));
         return model;
     }
 
-    /**
-     * 获取新添加的电影
+    /**f
+     * 获取新添加的电影，num：数量
      * @param model
      * @return
      */
@@ -119,37 +144,24 @@ public class MovieRestApi {
         return model;
     }
 
-    /**
-     * 获取电影详细页面相似的电影集合
-     * @param id
-     * @param model
-     * @return
-     */
-    @RequestMapping(value = "/same/{id}", produces = "application/json", method = RequestMethod.GET )
-    @ResponseBody
-    public Model getSameMovie(@PathVariable("id")int id,@RequestParam("num")int num, Model model) {
-        List<Recommendation> recommendations = recommenderService.getCollaborativeFilteringRecommendations(new MovieRecommendationRequest(id,num));
-        model.addAttribute("success",true);
-        model.addAttribute("movies",movieService.getRecommendeMovies(recommendations));
-        return model;
-    }
 
 
-    /**
+
+    /**f
      * 获取单个电影的信息
      * @param id
      * @param model
      * @return
      */
-    @RequestMapping(value = "/info/{id}", produces = "application/json", method = RequestMethod.GET )
+    @RequestMapping(value = "/info/{mid}", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
-    public Model getMovieInfo(@PathVariable("id")int id, Model model) {
+    public Model getMovieInfo(@PathVariable("mid")int id, Model model) {
         model.addAttribute("success",true);
         model.addAttribute("movie",movieService.findByMID(id));
         return model;
     }
 
-    /**
+    /**f
      * 模糊查询电影
      * @param query
      * @param model
@@ -158,14 +170,14 @@ public class MovieRestApi {
     @RequestMapping(value = "/search", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
     public Model getSearchMovies(@RequestParam("query")String query, Model model) {
-        List<Recommendation> recommendations = recommenderService.getContentBasedSearchRecommendations(new SearchRecommendationRequest(query,100));
+        List<Recommendation> recommendations = recommenderService.getContentBasedSearchRecommendations(new SearchRecommendationRequest(query,20));
         model.addAttribute("success",true);
         model.addAttribute("movies",movieService.getRecommendeMovies(recommendations));
         return model;
     }
 
-    /**
-     * 查询类别电影
+    /**f
+     * 查询电影类别
      * @param category
      * @param model
      * @return
@@ -173,7 +185,7 @@ public class MovieRestApi {
     @RequestMapping(value = "/genres", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
     public Model getGenresMovies(@RequestParam("category")String category, Model model) {
-        List<Recommendation> recommendations = recommenderService.getContentBasedGenresRecommendations(new SearchRecommendationRequest(category,100));
+        List<Recommendation> recommendations = recommenderService.getContentBasedGenresRecommendations(new SearchRecommendationRequest(category,20));
         model.addAttribute("success",true);
         model.addAttribute("movies",movieService.getRecommendeMovies(recommendations));
         return model;
@@ -194,14 +206,14 @@ public class MovieRestApi {
         return model;
     }
 
-
-    @RequestMapping(value = "/rate/{id}", produces = "application/json", method = RequestMethod.GET )
+    //给电影评分
+    @RequestMapping(value = "/rate/{mid}", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
-    public Model rateToMovie(@PathVariable("id")int id,@RequestParam("score")Double score,@RequestParam("username")String username, Model model) {
+    public Model rateToMovie(@PathVariable("mid")int id,@RequestParam("score")Double score,@RequestParam("username")String username, Model model) {
         User user = userService.findByUsername(username);
         MovieRatingRequest request = new MovieRatingRequest(user.getUid(),id,score);
         boolean complete = ratingService.movieRating(request);
-        //埋点日志
+        //埋点日志***************************************************************
         if(complete) {
             System.out.print("=========complete=========");
             logger.info(Constant.MOVIE_RATING_PREFIX + ":" + user.getUid() +"|"+ id +"|"+ request.getScore() +"|"+ System.currentTimeMillis()/1000);
@@ -212,6 +224,7 @@ public class MovieRestApi {
     }
 
 
+    //获取电影的所有标签
     @RequestMapping(value = "/tag/{mid}", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
     public Model getMovieTags(@PathVariable("mid")int mid, Model model) {
@@ -229,6 +242,8 @@ public class MovieRestApi {
         return model;
     }
 
+
+    //给电影打标签
     @RequestMapping(value = "/newtag/{mid}", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
     public Model addMyTags(@PathVariable("mid")int mid,@RequestParam("tagname")String tagname,@RequestParam("username")String username, Model model) {

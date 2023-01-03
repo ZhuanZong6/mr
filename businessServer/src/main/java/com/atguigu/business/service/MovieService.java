@@ -34,25 +34,26 @@ public class MovieService {
     private MongoCollection<Document> movieCollection;
     private MongoCollection<Document> averageMoviesScoreCollection;
     private MongoCollection<Document> rateCollection;
-
+    //
     private MongoCollection<Document> getMovieCollection(){
         if(null == movieCollection)
             movieCollection = mongoClient.getDatabase(Constant.MONGODB_DATABASE).getCollection(Constant.MONGODB_MOVIE_COLLECTION);
         return movieCollection;
     }
-
+    //
     private MongoCollection<Document> getAverageMoviesScoreCollection(){
         if(null == averageMoviesScoreCollection)
             averageMoviesScoreCollection = mongoClient.getDatabase(Constant.MONGODB_DATABASE).getCollection(Constant.MONGODB_AVERAGE_MOVIES_SCORE_COLLECTION);
         return averageMoviesScoreCollection;
     }
-
+    //
     private MongoCollection<Document> getRateCollection(){
         if(null == rateCollection)
             rateCollection = mongoClient.getDatabase(Constant.MONGODB_DATABASE).getCollection(Constant.MONGODB_RATING_COLLECTION);
         return rateCollection;
     }
 
+    //
     public List<Movie> getRecommendeMovies(List<Recommendation> recommendations){
         List<Integer> ids = new ArrayList<>();
         for (Recommendation rec: recommendations) {
@@ -60,7 +61,7 @@ public class MovieService {
         }
         return getMovies(ids);
     }
-
+    //
     public List<Movie> getHybirdRecommendeMovies(List<Recommendation> recommendations){
         List<Integer> ids = new ArrayList<>();
         for (Recommendation rec: recommendations) {
@@ -68,7 +69,7 @@ public class MovieService {
         }
         return getMovies(ids);
     }
-
+    //
     public List<Movie> getMovies(List<Integer> mids){
         FindIterable<Document> documents = getMovieCollection().find(Filters.in("mid",mids));
         List<Movie> movies = new ArrayList<>();
@@ -77,7 +78,7 @@ public class MovieService {
         }
         return movies;
     }
-
+    //
     private Movie documentToMovie(Document document){
         Movie movie = null;
         try{
@@ -92,7 +93,7 @@ public class MovieService {
         }
         return movie;
     }
-
+    //
     private Rating documentToRating(Document document){
         Rating rating = null;
         try{
@@ -106,7 +107,7 @@ public class MovieService {
     public boolean movieExist(int mid){
         return null != findByMID(mid);
     }
-
+    //
     public Movie findByMID(int mid){
         Document document = getMovieCollection().find(new Document("mid",mid)).first();
         if(document == null || document.isEmpty())
@@ -117,7 +118,7 @@ public class MovieService {
     public void removeMovie(int mid){
         getMovieCollection().deleteOne(new Document("mid",mid));
     }
-
+    //
     public List<Movie> getMyRateMovies(int uid){
         FindIterable<Document> documents = getRateCollection().find(Filters.eq("uid",uid));
         List<Integer> ids = new ArrayList<>();
@@ -134,7 +135,7 @@ public class MovieService {
 
         return movies;
     }
-
+    //
     public List<Movie> getNewMovies(NewRecommendationRequest request){
         FindIterable<Document> documents = getMovieCollection().find().sort(Sorts.descending("issue")).limit(request.getSum());
         List<Movie> movies = new ArrayList<>();

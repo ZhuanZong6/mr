@@ -57,7 +57,7 @@ public class Configure {
 
     @Bean(name = "transportClient")
     public TransportClient getTransportClient() throws UnknownHostException {
-        Settings settings = Settings.builder().put("cluster.name",esClusterName).build();
+        Settings settings = Settings.builder().put("cluster.name",Constant.ES_CLUSTER_NAME).build();
         TransportClient esClient = new PreBuiltTransportClient(settings);
         esClient.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(esHost), esPort));
         return esClient;

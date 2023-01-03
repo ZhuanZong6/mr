@@ -6,15 +6,6 @@ import org.apache.spark.ml.linalg.SparseVector
 import org.apache.spark.sql.SparkSession
 import org.jblas.DoubleMatrix
 
-/**
-  * Copyright (c) 2018-2028 尚硅谷 All Rights Reserved 
-  *
-  * Project: MovieRecommendSystem
-  * Package: com.atguigu.content
-  * Version: 1.0
-  *
-  * Created by wushengran on 2019/4/4 9:14
-  */
 
 // 需要的数据源是电影内容信息
 case class Movie(mid: Int, name: String, descri: String, timelong: String, issue: String,
@@ -38,7 +29,7 @@ object ContentRecommender {
   def main(args: Array[String]): Unit = {
     val config = Map(
       "spark.cores" -> "local[*]",
-      "mongo.uri" -> "mongodb://localhost:27017/recommender",
+      "mongo.uri" -> "mongodb://144.202.115.134:27017/recommender",
       "mongo.db" -> "recommender"
     )
 

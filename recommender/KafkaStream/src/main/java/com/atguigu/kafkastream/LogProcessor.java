@@ -1,22 +1,10 @@
-package com.atguigu.kafkastream;/**
- * Copyright (c) 2018-2028 尚硅谷 All Rights Reserved
- * <p>
- * Project: MovieRecommendSystem
- * Package: com.atguigu.kafkastream
- * Version: 1.0
- * <p>
- * Created by wushengran on 2019/4/4 10:49
- */
+package com.atguigu.kafkastream;
+
 
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 
-/**
- * @ClassName: LogProcessor
- * @Description:
- * @Author: wushengran on 2019/4/4 10:49
- * @Version: 1.0
- */
+
 public class LogProcessor implements Processor<byte[], byte[]>{
 
     private ProcessorContext context;

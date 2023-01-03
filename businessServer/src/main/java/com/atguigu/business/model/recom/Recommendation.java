@@ -1,7 +1,7 @@
 package com.atguigu.business.model.recom;
 
 /**
- * 推荐项目的包装
+ * 推荐的单个电影的包装
  */
 public class Recommendation {
 

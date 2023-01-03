@@ -48,7 +48,7 @@ public class RatingService {
         return rating;
 
     }
-
+   //------------------主逻辑-------------------
     public boolean movieRating(MovieRatingRequest request) {
         Rating rating = new Rating(request.getUid(), request.getMid(), request.getScore());
         updateRedis(rating);

@@ -2,6 +2,7 @@ package com.atguigu.business;
 
 import com.atguigu.business.model.domain.Tag;
 import com.atguigu.business.model.domain.User;
+import com.atguigu.business.utils.Configure;
 import com.atguigu.business.utils.Constant;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoClient;
@@ -34,10 +35,9 @@ public class Application {
 
         ApplicationContext context = new ClassPathXmlApplicationContext("classpath:application.xml");
 
-        Settings settings = Settings.builder().put("cluster.name","es-cluster").build();
+        Settings settings = Settings.builder().put("cluster.name", Constant.ES_CLUSTER_NAME).build();
         TransportClient esClient = new PreBuiltTransportClient(settings);
-        esClient.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("linux"), 9300));
-
+        esClient.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("144.202.115.134"), 9300));
         GetResponse getResponse = esClient.prepareGet(Constant.ES_INDEX,Constant.ES_MOVIE_TYPE,"3062").get();
 
         //Map<String,GetField> filed = getResponse.getFields();

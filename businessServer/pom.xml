@@ -92,7 +92,8 @@
                 <version>2.2</version>
                 <configuration>
                     <!-- http port -->
-                    <port>8088</port>
+                    <server>144.202.115.134</server>
+                    <port>9080</port>
                     <path>/</path>
                     <contextReloadable>true</contextReloadable>
                 </configuration>

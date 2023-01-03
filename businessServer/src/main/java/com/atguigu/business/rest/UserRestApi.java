@@ -30,6 +30,7 @@ public class UserRestApi {
         return model;
     }
 
+    //用户注册功能  produces：处理的数据类型
     @RequestMapping(value = "/register", produces = "application/json", method = RequestMethod.GET)
     @ResponseBody
     public Model addUser(@RequestParam("username") String username,@RequestParam("password") String password,Model model) {
@@ -42,7 +43,7 @@ public class UserRestApi {
         return model;
     }
 
-    //冷启动问题
+    //添加用户偏爱的影片类别
     @RequestMapping(value = "/pref", produces = "application/json", method = RequestMethod.GET)
     @ResponseBody
     public Model addPrefGenres(@RequestParam("username") String username,@RequestParam("genres") String genres,Model model) {

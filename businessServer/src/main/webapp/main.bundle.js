@@ -1082,8 +1082,8 @@ var _a, _b, _c;
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return constant; });
 var constant = {
-    BUSSINESS_SERVER_URL: 'http://localhost:8088/',
-    IMAGE_SERVER_URL: 'http://localhost:8088/'
+    BUSSINESS_SERVER_URL: 'http://144.202.115.134:9080/',
+    IMAGE_SERVER_URL: 'http://144.202.115.134:9080/'
 };
 
 //# sourceMappingURL=constant.js.map
