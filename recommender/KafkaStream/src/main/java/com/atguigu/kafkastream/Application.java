@@ -1,25 +1,15 @@
-package com.atguigu.kafkastream;/**
- * Copyright (c) 2018-2028 尚硅谷 All Rights Reserved
- * <p>
- * Project: MovieRecommendSystem
- * Package: com.atguigu.kafkastream
- * Version: 1.0
- * <p>
- * Created by wushengran on 2019/4/4 10:39
- */
+package com.atguigu.kafkastream;
 
+
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.processor.TopologyBuilder;
 
 import java.util.Properties;
 
-/**
- * @ClassName: Application
- * @Description:
- * @Author: wushengran on 2019/4/4 10:39
- * @Version: 1.0
- */
+
 public class Application {
     public static void main(String[] args) {
         String brokers = "144.202.115.134:9092";
@@ -34,6 +24,7 @@ public class Application {
         settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "logFilter");
         settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
         settings.put(StreamsConfig.ZOOKEEPER_CONNECT_CONFIG, zookeepers);
+        settings.put(StreamsConfig.TIMESTAMP_EXTRACTOR_CLASS_CONFIG, MyEventTimeExtractor.class);
 
         // 创建 kafka stream 配置对象
         StreamsConfig config = new StreamsConfig(settings);
@@ -47,10 +38,18 @@ public class Application {
                 .addSink("SINK", to, "PROCESSOR");
 
         KafkaStreams streams = new KafkaStreams( builder, config );
-
         streams.start();
+        System.out.println("接收到用户评分");
 
-        System.out.println("Kafka stream started!>>>>>>>>>>>");
+    }
 
+    public static class MyEventTimeExtractor implements TimestampExtractor {
+        public MyEventTimeExtractor(){
+        }
+        @Override
+        public long extract(ConsumerRecord<Object, Object> record,
+                            long previousTimestamp) {
+            return 0;
+        }
     }
 }

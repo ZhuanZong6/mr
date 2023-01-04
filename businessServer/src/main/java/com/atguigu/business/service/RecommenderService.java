@@ -96,34 +96,29 @@ public class RecommenderService {
         return recommendations;
     }
 
-    // 混合推荐算法iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
-    private List<Recommendation>  findHybridRecommendations(int productId, int maxItems) {
-        List<Recommendation> hybridRecommendations = new ArrayList<>();
-        //协同过滤结果（电影相似度矩阵）
-        List<Recommendation> cfRecs = findMovieCFRecs(productId, maxItems);
-        for (Recommendation recommendation : cfRecs) {
-            hybridRecommendations.add(new Recommendation(recommendation.getMid(), recommendation.getScore() * CF_RATING_FACTOR));
-        }
-
-        //基于es内容推荐结果
-        List<Recommendation> cbRecs = findContentBasedMoreLikeThisRecommendations(productId, maxItems);
-        for (Recommendation recommendation : cbRecs) {
-            hybridRecommendations.add(new Recommendation(recommendation.getMid(), recommendation.getScore() * CONTENT_REC_RATING_FACTOR));
-        }
-
+    // 实时推荐算法iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+    private List<Recommendation> findStreamRecommend(int productId, int maxItems) {
+        List<Recommendation> streamRecommendations = new ArrayList<>();
         //实时推荐结果
         List<Recommendation> streamRecs = findStreamRecs(productId,maxItems);
         for (Recommendation recommendation : streamRecs) {
-            hybridRecommendations.add(new Recommendation(recommendation.getMid(), recommendation.getScore() * STREAM_REC_RATING_FACTOR));
+            streamRecommendations.add(new Recommendation(recommendation.getMid(), recommendation.getScore() * STREAM_REC_RATING_FACTOR));
         }
 
-        Collections.sort(hybridRecommendations, new Comparator<Recommendation>() {
+//        //基于es内容推荐结果
+//        List<Recommendation> cbRecs = findContentBasedMoreLikeThisRecommendations(productId, maxItems);
+//        for (Recommendation recommendation : cbRecs) {
+//            hybridRecommendations.add(new Recommendation(recommendation.getMid(), recommendation.getScore() * CONTENT_REC_RATING_FACTOR));
+//        }
+
+
+        Collections.sort(streamRecommendations, new Comparator<Recommendation>() {
             @Override
             public int compare(Recommendation o1, Recommendation o2) {
                 return o1.getScore() > o2.getScore() ? -1 : 1;
             }
         });
-        return hybridRecommendations.subList(0, maxItems > hybridRecommendations.size() ? hybridRecommendations.size() : maxItems);
+        return streamRecommendations.subList(0, maxItems > streamRecommendations.size() ? streamRecommendations.size() : maxItems);
     }
 
 //------------------用到离线推荐数据------------------
@@ -146,8 +141,8 @@ public class RecommenderService {
         return findContentBasedSearchRecommendations(request.getText(), request.getSum());
     }
 
-    public List<Recommendation> getHybridRecommendations(MovieHybridRecommendationRequest request) {
-        return findHybridRecommendations(request.getMid(), request.getSum());
+    public List<Recommendation> getStreamRecommend(MovieHybridRecommendationRequest request) {
+        return findStreamRecommend(request.getMid(), request.getSum());//第一个参数得到的是uid，但是该函数中除了实时推荐，都是用mid
     }
 
 

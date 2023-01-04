@@ -24,6 +24,18 @@
     </dependencies>
 
     <build>
+        <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
+        <resources>
+            <resource>
+                <filtering>false</filtering>
+                <directory>src/main</directory>
+                <includes>
+                    <include>**</include>
+                </includes>
+            </resource>
+        </resources>
+
+
         <finalName>kafkastream</finalName>
         <plugins>
             <plugin>

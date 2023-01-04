@@ -16,7 +16,7 @@ object ALSTrainer {
       "mongo.db" -> "recommender"
     )
 
-    val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("OfflineRecommender")
+    val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("OfflineRecommender").set("spark.testing.memory", "2147480000")
 
     // 创建一个SparkSession
     val spark = SparkSession.builder().config(sparkConf).getOrCreate()

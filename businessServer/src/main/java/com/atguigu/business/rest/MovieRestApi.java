@@ -22,7 +22,6 @@ import java.util.Random;
 @Controller
 public class MovieRestApi {
 
-//    private Logger logger = LoggerFactory.getLogger(MovieRestApi.class);
 
     private static Logger logger = Logger.getLogger(MovieRestApi.class.getName());
 
@@ -38,17 +37,17 @@ public class MovieRestApi {
     private TagService tagService;
 
     /**f
-     * 获取推荐的电影【电影相似度矩阵 + es内容推荐 + 实时推荐】
+     * 实时推荐
      * @param username
      * @param model
      * @return
      */
-    // TODO: 2017/10/20  bug 混合推荐结果中，基于内容的推荐，基于MID，而非UID
     @RequestMapping(value = "/guess", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
-    public Model getGuessMovies(@RequestParam("username")String username,@RequestParam("num")int num, Model model) {
+    public Model getStreamMovies(@RequestParam("username")String username, @RequestParam("num")int num, Model model) {
         User user = userService.findByUsername(username);                                                                      //第一个参数应该传进mid(只用改这里)
-        List<Recommendation> recommendations = recommenderService.getHybridRecommendations(new MovieHybridRecommendationRequest(user.getUid(),num));
+        List<Recommendation> recommendations = recommenderService.getStreamRecommend(new MovieHybridRecommendationRequest(user.getUid(),num));
+
         if(recommendations.size()==0){
             String randomGenres = user.getPrefGenres().get(new Random().nextInt(user.getPrefGenres().size()));
             recommendations = recommenderService.getTopGenresRecommendations(new TopGenresRecommendationRequest(randomGenres.split(" ")[0],num));
@@ -92,7 +91,7 @@ public class MovieRestApi {
     @RequestMapping(value = "/same/{mid}", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
     public Model getSameMovie(@PathVariable("mid")int id,@RequestParam("num")int num, Model model) {
-        //基于电影内容的协同过滤，读取movieRecs表
+        //读取movieRecs表
         List<Recommendation> recommendations = recommenderService.getCollaborativeFilteringRecommendations(new MovieRecommendationRequest(id,num));
         model.addAttribute("success",true);
         model.addAttribute("movies",movieService.getRecommendeMovies(recommendations));
@@ -170,7 +169,7 @@ public class MovieRestApi {
     @RequestMapping(value = "/search", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
     public Model getSearchMovies(@RequestParam("query")String query, Model model) {
-        List<Recommendation> recommendations = recommenderService.getContentBasedSearchRecommendations(new SearchRecommendationRequest(query,20));
+        List<Recommendation> recommendations = recommenderService.getContentBasedSearchRecommendations(new SearchRecommendationRequest(query,50));
         model.addAttribute("success",true);
         model.addAttribute("movies",movieService.getRecommendeMovies(recommendations));
         return model;
@@ -185,7 +184,7 @@ public class MovieRestApi {
     @RequestMapping(value = "/genres", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
     public Model getGenresMovies(@RequestParam("category")String category, Model model) {
-        List<Recommendation> recommendations = recommenderService.getContentBasedGenresRecommendations(new SearchRecommendationRequest(category,20));
+        List<Recommendation> recommendations = recommenderService.getContentBasedGenresRecommendations(new SearchRecommendationRequest(category,50));
         model.addAttribute("success",true);
         model.addAttribute("movies",movieService.getRecommendeMovies(recommendations));
         return model;

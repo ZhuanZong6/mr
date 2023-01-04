@@ -13,7 +13,7 @@ import redis.clients.jedis.Jedis
 
 // 定义连接助手对象，序列化
 object ConnHelper extends Serializable{
-  lazy val jedis = new Jedis("144.202.115.134")
+  lazy val jedis = new Jedis("redis://144.202.115.134:6379/0")
   lazy val mongoClient = MongoClient( MongoClientURI("mongodb://144.202.115.134:27017/recommender") )
 }
 
@@ -44,7 +44,7 @@ object StreamingRecommender {
       "kafka.topic" -> "recommender"
     )
 
-    val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("StreamingRecommender").set("spark.executor.memory", "6G").set("spark.driver.memory", "3G")
+    val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("StreamingRecommender").set("spark.executor.memory", "32G").set("spark.driver.memory", "32G").set("spark.testing.memory", "2147480000")
 
     // 创建一个SparkSession
     val spark = SparkSession.builder().config(sparkConf).getOrCreate()
@@ -94,11 +94,11 @@ object StreamingRecommender {
         ( attr(0).toInt, attr(1).toInt, attr(2).toDouble, attr(3).toInt )
     }
 
-    // ==========================继续做流式处理，核心实时算法部分----------------------------------------------------------------------------
+    // ==========================流式计算部分----------------------------------------------------------------------------
     ratingStream.foreachRDD{
       rdd => rdd.map{
         case (uid, mid, score, timestamp) => {
-          println("rating data coming! >>>>>>>>>>>>>>>>")
+          println("正在实时计算用户偏好...")
 
           // 1. 从redis里获取当前用户最近的K次评分，保存成Array[(mid, score)]
           val userRecentlyRatings = getUserRecentlyRating( MAX_USER_RATINGS_NUM, uid, ConnHelper.jedis )
@@ -111,13 +111,20 @@ object StreamingRecommender {
 
           // 4. 把推荐数据保存到mongodb
           saveDataToMongoDB( uid, streamRecs )
+          println("==================================================")
+          println("|                        |                        |")
+          println("|                        |                        |")
+          println("|---------------------计算完成---------------------|")
+          println("|                        |                        |")
+          println("|                        |                        |")
+          println("==================================================")
         }
       }.count()
     }
     // 开始接收和处理数据
     ssc.start()
 
-    println(">>>>>>>>>>>>>>> streaming started!")
+    println("接收到用户评分信息...")
 
     ssc.awaitTermination()
 

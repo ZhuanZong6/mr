@@ -98,7 +98,7 @@ object DataLoader {
     )
 
     // 创建一个sparkConf
-    val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("DataLoader")
+    val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("DataLoader").set("spark.testing.memory", "2147480000")
     sparkConf.set("es.nodes.wan.only","true")//关闭自动发现节点，只使用给定的node节点
     // 创建一个SparkSession
     val spark = SparkSession.builder().config(sparkConf).getOrCreate()

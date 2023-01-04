@@ -37,7 +37,7 @@ object OfflineRecommender {
       "mongo.db" -> "recommender"
     )
 
-    val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("OfflineRecommender").set("spark.executor.memory", "6G").set("spark.driver.memory", "3G")
+    val sparkConf = new SparkConf().setMaster(config("spark.cores")).setAppName("StreamingRecommender").set("spark.executor.memory", "32G").set("spark.driver.memory", "32G").set("spark.testing.memory", "2147480000")
 
     // 创建一个SparkSession
     val spark = SparkSession.builder().config(sparkConf).getOrCreate()
@@ -47,6 +47,7 @@ object OfflineRecommender {
     implicit val mongoConfig = MongoConfig(config("mongo.uri"), config("mongo.db"))
 
 //==============================计算用户推荐矩阵====================================
+    println("==============================计算用户推荐矩阵==============================")
     // 加载数据
     val ratingRDD = spark.read
       .option("uri", mongoConfig.uri)
@@ -100,7 +101,7 @@ object OfflineRecommender {
 
 
 //==============================计算相似度矩阵========================================
-
+    println("==============================计算相似度矩阵==============================")
     // 基于电影隐特征，计算相似度矩阵，得到电影的相似度列表
     val movieFeatures = model.productFeatures.map{ //特征值是模型自动给出的，无法知道其意义
       case (mid, features) => (mid, new DoubleMatrix(features))
