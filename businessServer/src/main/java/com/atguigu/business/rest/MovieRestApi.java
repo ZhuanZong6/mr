@@ -42,7 +42,7 @@ public class MovieRestApi {
      * @param model
      * @return
      */
-    @RequestMapping(value = "/guess", produces = "application/json", method = RequestMethod.GET )
+    @RequestMapping(value = "/stream", produces = "application/json", method = RequestMethod.GET )
     @ResponseBody
     public Model getStreamMovies(@RequestParam("username")String username, @RequestParam("num")int num, Model model) {
         User user = userService.findByUsername(username);                                                                      //第一个参数应该传进mid(只用改这里)

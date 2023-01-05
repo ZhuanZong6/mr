@@ -63,7 +63,7 @@ object OfflineRecommender {
     val userRDD = ratingRDD.map(_._1).distinct()
     val movieRDD = ratingRDD.map(_._2).distinct()
 
-    // 训练隐语义模型
+    // 用来训练模型的rating数据
     val trainData = ratingRDD.map( x => Rating(x._1, x._2, x._3) )
 
     val (rank, iterations, lambda) = (200, 5, 0.1)
@@ -76,7 +76,7 @@ object OfflineRecommender {
     val model = ALS.train(trainData, rank, iterations, lambda)
 
     // 基于用户和电影的隐特征，计算预测评分，得到用户的推荐列表
-    // 计算user和movie的笛卡尔积，得到一个空评分矩阵
+    // 计算user和movie的笛卡尔积
     val userMovies = userRDD.cartesian(movieRDD)
 
     // 调用model的predict方法预测评分
@@ -102,12 +102,12 @@ object OfflineRecommender {
 
 //==============================计算相似度矩阵========================================
     println("==============================计算相似度矩阵==============================")
-    // 基于电影隐特征，计算相似度矩阵，得到电影的相似度列表
-    val movieFeatures = model.productFeatures.map{ //特征值是模型自动给出的，无法知道其意义
+    //取得电影特征值，特征值是模型自动给出的，无法知道其意义
+    val movieFeatures = model.productFeatures.map{
       case (mid, features) => (mid, new DoubleMatrix(features))
     }
 
-    // 对所有电影两两计算它们的相似度，先做笛卡尔积（cartesian）
+    //计算电影相似度：笛卡尔积（cartesian）
     val movieRecs = movieFeatures.cartesian(movieFeatures)
       .filter{
         // 把自己跟自己的配对过滤掉

@@ -41,7 +41,7 @@ object ALSTrainer {
     val trainingRDD = splits(0)
     val testRDD = splits(1)
 
-    // 模型参数选择，输出最优参数
+    // 模型参数选择，输出最优参数********************************************************
     adjustALSParam(trainingRDD, testRDD)
 
     spark.close()
@@ -51,7 +51,6 @@ object ALSTrainer {
     val result = for( rank <- Array(50, 100, 200, 300); lambda <- Array( 0.01, 0.1, 1 ))
       yield {
         val model = ALS.train(trainData, rank, 5, lambda)
-        // 计算当前参数对应模型的rmse，返回Double
         val rmse = getRMSE( model, testData )
         ( rank, lambda, rmse )
       }
